@@ -1,10 +1,31 @@
 import React, { Component } from "react";
+import { connect } from "react-redux";
+import { signIn, signOut } from "../actions";
 
 class GoogleAuth extends Component {
-  state = {
-    isSignedIn: null,
-  };
+  // state = {
+  //   isSignedIn: null,
+  // };
 
+  // BEFORE ADDING REDUX REDUCER
+  // componentDidMount() {
+  //   window.gapi.load("client:auth2", () => {
+  //     window.gapi.client
+  //       .init({
+  //         clientId:
+  //           "709126930926-0deao81at3d7her2dcibbgl4q0258hom.apps.googleusercontent.com",
+  //         scope: "email",
+  //         plugin_name: "streamyTwitch",
+  //       })
+  //       .then(() => {
+  //         this.auth = window.gapi.auth2.getAuthInstance();
+  //         this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+  //         this.auth.isSignedIn.listen(this.onAuthChange);
+  //       });
+  //   });
+  // }
+
+  // AFTER ADDING REDUX REDUCER
   componentDidMount() {
     window.gapi.load("client:auth2", () => {
       window.gapi.client
@@ -16,14 +37,28 @@ class GoogleAuth extends Component {
         })
         .then(() => {
           this.auth = window.gapi.auth2.getAuthInstance();
-          this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+          // this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+          this.onAuthChange(this.auth.isSignedIn.get());
           this.auth.isSignedIn.listen(this.onAuthChange);
         });
     });
   }
 
-  onAuthChange = () => {
-    this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+  // BEFORE ADDING REDUX ACTIONS
+  // onAuthChange = () => {
+  //   this.setState({ isSignedIn: this.auth.isSignedIn.get() });
+  // };
+
+  // AFTER ADDING REDUX ACTIONS
+  onAuthChange = (
+    //  we dont have to write whole this.auth.isSignedIn.get(), we can directly do isSignedIn
+    isSignedIn
+  ) => {
+    if (isSignedIn === true) {
+      this.props.signIn();
+    } else {
+      this.props.signOut();
+    }
   };
 
   onSignInClick = () => {
@@ -35,9 +70,9 @@ class GoogleAuth extends Component {
   };
 
   renderAuthButton() {
-    if (this.state.isSignedIn === null) {
+    if (this.props.isSignedIn === null) {
       return null;
-    } else if (this.state.isSignedIn === true) {
+    } else if (this.props.isSignedIn === true) {
       return (
         <button onClick={this.onSignOutClick} className="ui red google button">
           <i className="google icon" />
@@ -55,8 +90,17 @@ class GoogleAuth extends Component {
   }
 
   render() {
-    return <div style={{marginTop:"6px"}}>{this.renderAuthButton()}</div>;
+    return <div style={{ marginTop: "6px" }}>{this.renderAuthButton()}</div>;
   }
 }
 
-export default GoogleAuth;
+const mapStateToProps = (state) => {
+  return {
+    isSignedIn: state.authReducer.isSignedIn,
+  };
+};
+
+export default connect(mapStateToProps, {
+  signIn: signIn,
+  signOut: signOut,
+})(GoogleAuth);
